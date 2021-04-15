@@ -3,6 +3,8 @@ import glob
 import numpy as np
 import shutil
 import cv2
+import pandas as pd
+import csv
 
 def GetListFormTxt(list_file):
     result = []
@@ -51,6 +53,22 @@ def WritePointsToFile(points, filename):
         elif dim == 5:
             f.write("%.3f %.3f %.3f %.3f %d\n" % (points[i, 0], points[i, 1], points[i, 2], points[i, 3], points[i, 4]))
     f.close()
+
+
+def ReadCsvFile(file_name):
+    f =  pd.read_csv(file_name)
+    scatters = np.array(f)
+
+    return scatters
+
+def WriteLineFittingResultToFile(matrix1, matrix2, filename):
+    _, dim = matrix1.shape
+    if dim == 3:
+        f = pd.DataFrame(matrix1, columns=["X", "Y", "Y_Pred"])
+        f.to_csv(filename, index=False)
+    elif dim == 1:
+        f = pd.DataFrame(np.array([matrix1,matrix2]), columns=['coef-left','coef-right'])
+        f.to_csv(filename, index=False)
 
 
 def GetTestDataList(folder, lidar_id_list):

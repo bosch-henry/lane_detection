@@ -9,7 +9,7 @@ import os
 import glob
 
 #LIDAR_IDs is defined in config.py
-BV_RANGE_SETTINGS = GetBVRangeSettings(LIDAR_IDs)
+BV_RANGE_SETTINGS = GetBVRangeSettings_frount(LIDAR_IDs)
 
 if not os.path.exists(VIS_FOLDER):
     os.mkdir(VIS_FOLDER)
@@ -65,10 +65,7 @@ for subfolder in test_data_subfolders:
                     imgpos1[row][col] = 1
                 else :
                     imgpos1[row][col] = 0
-        
-        
-        left_fit, right_fit, left_lane_inds, right_lane_inds = find_line(imgpos1)
-        print(left_fit)
+
         '''
 
 

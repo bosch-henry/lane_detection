@@ -8,6 +8,7 @@ from util.file_util import *
 import glob
 import os
 import torch
+torch.cuda.current_device()
 
 
 def Inference(model, bv_data):
@@ -76,3 +77,48 @@ for subfolder in test_data_subfolders:
 
         OutputPointsWithClass(points_input_set, points_class_set, output_path, pc_name_set, para_name_set)
 
+BV_RANGE_SETTINGS = GetBVRangeSettings_frount(LIDAR_IDs)
+
+test_data_subfolders = glob.glob(os.path.join(POINTS_WITH_CLASS_FOLDER, "*"))
+test_data_subfolders.sort()
+
+for subfolder in test_data_subfolders:
+    print("processing %s" % subfolder)
+
+    pointcloud_name_set_list, _, para_name_set = GetTestDataList(subfolder, LIDAR_IDs)
+
+    parameters = ReadSelectedPara(para_name_set)
+
+    output_path = os.path.join(VIS_FOLDER, subfolder.split("/")[-1])
+    if not os.path.exists(output_path):
+        os.mkdir(output_path)
+
+    coef_output = []
+    index_name = []
+
+    for j, pc_name_set in enumerate(pointcloud_name_set_list):
+        print("%d / %d" % (j + 1, len(pointcloud_name_set_list)))
+
+        points_input_set = ReadSelectedPoints(pc_name_set)
+        points_trans_set = ProjectPointsToWorld(points_input_set, parameters)
+        points_merge = MergePoints(points_trans_set)
+        points_solid, points_dash = AdjustIntensity_vis(points_merge, BV_COMMON_SETTINGS)
+        points_line = np.concatenate((points_solid, points_dash), axis=0)
+       
+        #origin_right,origin_left = histogram_view(points_solid[:,1])
+     
+        left_fit, right_fit, left_lane_inds, right_lane_inds = find_line(points_line)
+        coef = np.concatenate((left_fit, right_fit), axis=0)
+        coef_output.append(coef) 
+        one_coef_name = pc_name_set[list(pc_name_set)[0]]
+        pure_name = one_coef_name.split("/")[-1][:-4]
+        index_name.append(pure_name)
+        #output_name = os.path.join(output_path, pure_name+".jpg")
+        
+        #WriteLineFittingResultToFile(left_fit,right_fit,"1.csv")
+
+    #ls = [[i[j] for i in index_name] for j in range(len(index_name[0]))]
+    f = pd.DataFrame((coef_output), columns = ['L-c0','L-c1','L-c2','L-c3','R-c0','R-c1','R-c2','R-c3'], index = index_name)
+    f.round(6)
+    print(f)
+    f.to_csv('pc_name_set.csv')
